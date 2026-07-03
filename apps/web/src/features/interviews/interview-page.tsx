@@ -6,19 +6,36 @@ import {
   useLocalParticipant,
   useVoiceAssistant
 } from "@livekit/components-react";
+import { useQuery } from "@tanstack/react-query";
 import { ConnectionState } from "livekit-client";
 import { motion } from "motion/react";
 import { CircleAlert, LoaderCircle, Mic, MicOff, PhoneOff, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { api } from "../../lib/api";
 
 type Connection = { url: string; token: string };
 export function InterviewPage() {
   const location = useLocation();
-  const connection = location.state as Connection | null;
-  if (!connection?.token) return <Navigate to="/app/new" replace />;
+  const { id } = useParams();
+  const routeConnection = location.state as Connection | null;
+  const connectionQuery = useQuery({
+    queryKey: ["interview-connection", id],
+    enabled: !routeConnection?.token && Boolean(id),
+    retry: 2,
+    queryFn: async () => (await api.post<{ data: Connection }>(`/interviews/${id}/connect`)).data.data
+  });
+  const connection = routeConnection?.token ? routeConnection : connectionQuery.data;
+  if (!connection) {
+    return <main className="grid min-h-screen place-items-center bg-[#080908] px-5 text-center">
+      <div>
+        {connectionQuery.isError
+          ? <><h1 className="text-xl font-semibold">Could not reconnect to this interview</h1><p className="mt-3 max-w-md text-sm leading-6 text-[#90968e]">The session may have ended, or the voice service is unavailable.</p><Button className="mt-6" onClick={() => window.location.assign("/app/new")}>Start a new interview</Button></>
+          : <><LoaderCircle className="mx-auto size-6 animate-spin text-[#caff3d]" /><p className="mt-4 text-sm text-[#90968e]">Preparing the secure voice room…</p></>}
+      </div>
+    </main>;
+  }
   return <LiveKitRoom
     token={connection.token}
     serverUrl={connection.url}
