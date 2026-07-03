@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 import { motion } from "motion/react";
 import { useForm, type Resolver } from "react-hook-form";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
@@ -24,8 +25,11 @@ export function AuthPage() {
       const response = await api.post(`/auth/${isRegister ? "register" : "login"}`, values);
       setAuth(response.data.data.token, response.data.data.user);
       navigate("/app");
-    } catch (error: any) {
-      form.setError("root", { message: error.response?.data?.error?.message ?? "Unable to continue. Try again." });
+    } catch (error: unknown) {
+      const message = axios.isAxiosError<{ error?: { message?: string } }>(error)
+        ? error.response?.data?.error?.message
+        : undefined;
+      form.setError("root", { message: message ?? "Unable to continue. Try again." });
     }
   });
   return <main className="studio-grid min-h-screen px-4 py-6">

@@ -1,5 +1,6 @@
 import axios from "axios";
 
+export const authExpiredEvent = "rehearsal:auth-expired";
 export const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:4000/api", timeout: 15_000 });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("rehearsal.token");
@@ -7,6 +8,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 api.interceptors.response.use((response) => response, (error) => {
-  if (error.response?.status === 401) localStorage.removeItem("rehearsal.token");
+  if (error.response?.status === 401) {
+    localStorage.removeItem("rehearsal.token");
+    localStorage.removeItem("rehearsal.user");
+    window.dispatchEvent(new Event(authExpiredEvent));
+  }
   return Promise.reject(error);
 });
