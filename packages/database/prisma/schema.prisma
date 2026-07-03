@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ExperienceLevel {
+  ENTRY
+  MID
+  SENIOR
+  LEAD
+}
+
+enum InterviewType {
+  BEHAVIORAL
+  TECHNICAL
+  SYSTEM_DESIGN
+  CULTURE_FIT
+}
+
+enum SessionStatus {
+  CREATED
+  ACTIVE
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum Speaker {
+  CANDIDATE
+  INTERVIEWER
+}
+
+model User {
+  id           String             @id @default(cuid())
+  email        String             @unique
+  passwordHash String
+  name         String
+  jobRole      String
+  experience   ExperienceLevel
+  sessions     InterviewSession[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+model InterviewSession {
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           InterviewType
+  targetRole     String
+  jobDescription String?
+  durationMinutes Int            @default(20)
+  status         SessionStatus   @default(CREATED)
+  roomName       String          @unique
+  startedAt      DateTime?
+  endedAt        DateTime?
+  turns          TranscriptTurn[]
+  evaluations    AnswerEvaluation[]
+  report         InterviewReport?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model TranscriptTurn {
+  id        String           @id @default(cuid())
+  sessionId String
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  speaker   Speaker
+  text      String
+  sequence  Int
+  createdAt DateTime         @default(now())
+
+  @@unique([sessionId, sequence])
+}
+
+model AnswerEvaluation {
+  id         String           @id @default(cuid())
+  sessionId  String
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  score      Int
+  depth      Int
+  clarity    Int
+  relevance  Int
+  route      String
+  rationale  String
+  createdAt  DateTime         @default(now())
+}
+
+model InterviewReport {
+  id         String           @id @default(cuid())
+  sessionId  String           @unique
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  content    Json
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
