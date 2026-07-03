@@ -78,6 +78,8 @@ export function createInterviewGraph(model: BedrockChat) {
 }
 
 export class InterviewEngine {
+  private initialized = false;
+
   constructor(private graph: ReturnType<typeof createInterviewGraph>) {}
 
   async opening(input: { sessionId: string; type: InterviewType; role: string; level: string; durationMinutes: number }) {
@@ -88,9 +90,13 @@ export class InterviewEngine {
   async next(input: { sessionId: string; type: InterviewType; role: string; level: string; durationMinutes: number; startedAt: number; history: Turn[]; answer: string }) {
     const result = await this.graph.invoke({
       type: input.type, role: input.role, level: input.level, durationMinutes: input.durationMinutes,
-      startedAt: input.startedAt, history: [...input.history, { role: "candidate", content: input.answer }],
+      startedAt: input.startedAt,
+      history: this.initialized
+        ? [{ role: "candidate", content: input.answer }]
+        : [...input.history, { role: "candidate", content: input.answer }],
       latestAnswer: input.answer
     }, { configurable: { thread_id: input.sessionId } });
+    this.initialized = true;
     return result.response;
   }
 }

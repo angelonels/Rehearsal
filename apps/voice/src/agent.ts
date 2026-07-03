@@ -14,7 +14,6 @@ import { createInterviewGraph, InterviewEngine, type Turn } from "./interview-gr
 const credentials = config.BEDROCK_AWS_ACCESS_KEY_ID && config.BEDROCK_AWS_SECRET_ACCESS_KEY
   ? { accessKeyId: config.BEDROCK_AWS_ACCESS_KEY_ID, secretAccessKey: config.BEDROCK_AWS_SECRET_ACCESS_KEY } : undefined;
 const model = new BedrockChat(config.BEDROCK_CHAT_MODEL_ID, config.BEDROCK_AWS_REGION, credentials);
-const engine = new InterviewEngine(createInterviewGraph(model));
 const { db } = createDatabase(config.DATABASE_URL);
 
 type SessionContext = {
@@ -28,7 +27,7 @@ type SessionContext = {
 };
 
 class InterviewerAgent extends voice.Agent<SessionContext> {
-  constructor(data: SessionContext) {
+  constructor(data: SessionContext, private engine: InterviewEngine) {
     super({ instructions: "Conduct the adaptive interview.", stt: new deepgram.STT({
       apiKey: config.DEEPGRAM, model: "nova-3", language: "en", smartFormat: true
     }), tts: new deepgram.TTS({ apiKey: config.DEEPGRAM, model: "aura-2-andromeda-en" }) });
@@ -40,7 +39,7 @@ class InterviewerAgent extends voice.Agent<SessionContext> {
     const last = [...chatCtx.items].reverse().find((item): item is llm.ChatMessage => item.type === "message" && item.role === "user");
     const answer = last?.textContent?.trim();
     if (!answer) return null;
-    const response = await engine.next({ ...this.data, answer });
+    const response = await this.engine.next({ ...this.data, answer });
     this.data.history.push({ role: "candidate", content: answer }, { role: "interviewer", content: response });
     return new ReadableStream<string>({ start(controller) { controller.enqueue(response); controller.close(); } }) as Awaited<ReturnType<voice.Agent["llmNode"]>>;
   }
@@ -66,6 +65,7 @@ export default defineAgent({
       level: sessionRecord.user.experienceLevel, durationMinutes: sessionRecord.durationMinutes,
       startedAt: Date.now(), history
     };
+    const engine = new InterviewEngine(createInterviewGraph(model));
     await db.update(sessions).set({ status: "active", startedAt: new Date() }).where(eq(sessions.id, sessionRecord.id));
     let sequence = sessionRecord.transcriptTurns.length;
     const session = new voice.AgentSession<SessionContext>({
@@ -80,7 +80,7 @@ export default defineAgent({
         content: item.textContent, sequence: sequence++
       });
     });
-    await session.start({ agent: new InterviewerAgent(data), room: ctx.room });
+    await session.start({ agent: new InterviewerAgent(data, engine), room: ctx.room });
     if (history.length === 0) {
       const opening = await engine.opening(data);
       data.history.push({ role: "interviewer", content: opening });
