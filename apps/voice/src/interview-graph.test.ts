@@ -2,6 +2,21 @@ import { describe, expect, it, vi } from "vitest";
 import { createInterviewGraph, InterviewEngine, type Turn } from "./interview-graph.js";
 
 describe("adaptive interview graph", () => {
+  it("opens with one concise, role-specific question", async () => {
+    const engine = new InterviewEngine(createInterviewGraph({} as never));
+    const opening = await engine.opening({
+      sessionId: crypto.randomUUID(),
+      type: "system_design",
+      role: "Platform Engineer",
+      level: "senior",
+      durationMinutes: 30
+    });
+
+    expect(opening).toContain("Platform Engineer");
+    expect(opening.split(/\s+/).length).toBeLessThanOrEqual(30);
+    expect(opening.match(/\?/g)).toHaveLength(1);
+  });
+
   it("probes a weak answer before moving on", async () => {
     const model = {
       json: vi.fn().mockResolvedValue({ score: 30, completeness: "weak", missing: ["specific action"], interesting: [], shouldFollowUp: true, rationale: "Vague" }),
@@ -68,5 +83,24 @@ describe("adaptive interview graph", () => {
     expect(finalEvaluationPrompt.match(/I stabilized checkout\./g)).toHaveLength(1);
     expect(finalEvaluationPrompt.match(/I added load tests\./g)).toHaveLength(1);
     expect(finalEvaluationPrompt.match(/I changed the retry policy\./g)).toHaveLength(2);
+  });
+
+  it("continues with a specific follow-up when model inference fails", async () => {
+    const model = {
+      json: vi.fn().mockRejectedValue(new Error("Bedrock timed out")),
+      text: vi.fn().mockRejectedValue(new Error("Bedrock timed out"))
+    };
+    const engine = new InterviewEngine(createInterviewGraph(model as never));
+
+    await expect(engine.next({
+      sessionId: crypto.randomUUID(),
+      type: "behavioral",
+      role: "Engineer",
+      level: "mid",
+      durationMinutes: 30,
+      startedAt: Date.now(),
+      history: [],
+      answer: "We handled it."
+    })).resolves.toMatch(/specific action/i);
   });
 });
