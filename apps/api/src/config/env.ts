@@ -1,6 +1,7 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
 import { z } from "zod";
 
+loadEnv({ path: new URL("../../../../.env", import.meta.url) });
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   API_PORT: z.coerce.number().int().positive().default(4000),

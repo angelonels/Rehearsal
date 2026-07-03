@@ -2,10 +2,9 @@ import { fileURLToPath } from "node:url";
 import { asc, eq } from "drizzle-orm";
 import {
   WorkerOptions, cli, defineAgent, inference, llm, voice,
-  type JobContext, type JobProcess
+  type JobContext
 } from "@livekit/agents";
 import * as deepgram from "@livekit/agents-plugin-deepgram";
-import * as silero from "@livekit/agents-plugin-silero";
 import { createDatabase, sessions, transcriptTurns } from "@rehearsal/database";
 import type { InterviewType } from "@rehearsal/contracts";
 import { config } from "./config.js";
@@ -48,9 +47,6 @@ class InterviewerAgent extends voice.Agent<SessionContext> {
 }
 
 export default defineAgent({
-  prewarm: async (proc: JobProcess) => {
-    proc.userData.vad = await silero.VAD.load();
-  },
   entry: async (ctx: JobContext) => {
     await ctx.connect();
     const participant = await ctx.waitForParticipant();
@@ -74,7 +70,6 @@ export default defineAgent({
     let sequence = sessionRecord.transcriptTurns.length;
     const session = new voice.AgentSession<SessionContext>({
       userData: data,
-      vad: ctx.proc.userData.vad as silero.VAD,
       turnHandling: { turnDetection: new inference.TurnDetector({ version: "v1-mini" }) }
     });
     session.on(voice.AgentSessionEventTypes.ConversationItemAdded, async (event) => {
@@ -94,4 +89,4 @@ export default defineAgent({
   }
 });
 
-cli.runApp(new WorkerOptions({ agent: fileURLToPath(import.meta.url), agentName: "rehearsal-interviewer" }));
+cli.runApp(new WorkerOptions({ agent: fileURLToPath(import.meta.url) }));

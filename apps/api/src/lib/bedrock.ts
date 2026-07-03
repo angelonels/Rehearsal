@@ -25,6 +25,10 @@ export class BedrockService {
     }));
     const text = response.output?.message?.content?.find((block) => "text" in block)?.text;
     if (!text) throw new Error("Bedrock returned no report");
-    return reportSchema.parse(JSON.parse(text.replace(/^```json\s*|\s*```$/g, "")));
+    const cleaned = text.replace(/<\|[^|>]+\|>/g, "").replace(/^```json\s*|\s*```$/g, "").trim();
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start < 0 || end < start) throw new Error("Bedrock returned no report JSON");
+    return reportSchema.parse(JSON.parse(cleaned.slice(start, end + 1)));
   }
 }
