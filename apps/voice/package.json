@@ -1,0 +1,28 @@
+{
+  "name": "@rehearsal/voice",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/agent.ts dev",
+    "start": "node dist/agent.js start",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.840.0",
+    "@langchain/langgraph": "^0.3.6",
+    "@livekit/agents": "^1.4.9",
+    "@livekit/agents-plugin-deepgram": "^1.4.9",
+    "@livekit/agents-plugin-silero": "^1.4.9",
+    "@rehearsal/contracts": "workspace:*",
+    "@rehearsal/database": "workspace:*",
+    "dotenv": "^16.5.0",
+    "drizzle-orm": "^0.44.2",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "vitest": "^3.2.4"
+  }
+}

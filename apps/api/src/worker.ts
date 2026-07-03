@@ -1,12 +1,12 @@
 import { Worker } from "bullmq";
-import { Redis } from "ioredis";
 import { asc, eq } from "drizzle-orm";
 import { createDatabase, reports, sessions, transcriptTurns } from "@rehearsal/database";
 import { env } from "./config/env.js";
 import { BedrockService } from "./lib/bedrock.js";
+import { redisConnection } from "./queues.js";
 
 const { db, pool } = createDatabase(env.DATABASE_URL);
-const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
+const connection = redisConnection(env.REDIS_URL);
 const credentials = env.BEDROCK_AWS_ACCESS_KEY_ID && env.BEDROCK_AWS_SECRET_ACCESS_KEY
   ? { accessKeyId: env.BEDROCK_AWS_ACCESS_KEY_ID, secretAccessKey: env.BEDROCK_AWS_SECRET_ACCESS_KEY } : undefined;
 const bedrock = new BedrockService(env.BEDROCK_REPORT_MODEL_ID, env.BEDROCK_AWS_REGION, credentials);
@@ -27,7 +27,6 @@ const worker = new Worker("reports", async (job) => {
 
 async function shutdown() {
   await worker.close();
-  await connection.quit();
   await pool.end();
 }
 process.on("SIGTERM", shutdown);
