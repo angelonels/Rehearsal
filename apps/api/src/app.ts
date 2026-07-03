@@ -20,7 +20,7 @@ export type AppDeps = {
   config: { webOrigin: string; jwtSecret: string; jwtExpiresIn: string; livekitUrl: string; livekitApiKey: string; livekitApiSecret: string };
 };
 
-export function createApp(deps: AppDeps) {
+export function createApp(deps: AppDeps): express.Express {
   const app = express();
   app.set("trust proxy", 1);
   app.use(helmet());

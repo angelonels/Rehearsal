@@ -3,7 +3,7 @@ import { createSessionSchema } from "@rehearsal/contracts";
 import type { Queue } from "bullmq";
 import type { InterviewService } from "./service.js";
 
-export function interviewRoutes(service: InterviewService, reportsQueue: Queue) {
+export function interviewRoutes(service: InterviewService, reportsQueue: Queue): Router {
   const router = Router();
   router.get("/", async (req, res) => res.json({ data: await service.list(req.userId!) }));
   router.get("/:id", async (req, res) => res.json({ data: await service.get(req.userId!, req.params.id!) }));

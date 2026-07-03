@@ -2,7 +2,7 @@ import { Router } from "express";
 import { loginSchema, registerSchema } from "@rehearsal/contracts";
 import type { AuthService } from "./auth.js";
 
-export function authRoutes(service: AuthService) {
+export function authRoutes(service: AuthService): Router {
   const router = Router();
   router.post("/register", async (req, res) => {
     res.status(201).json({ data: await service.register(registerSchema.parse(req.body)) });
