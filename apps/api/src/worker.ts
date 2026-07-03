@@ -25,7 +25,10 @@ const worker = new Worker("reports", async (job) => {
   });
 }, { connection, concurrency: 2 });
 
+let shuttingDown = false;
 async function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
   await worker.close();
   await pool.end();
 }

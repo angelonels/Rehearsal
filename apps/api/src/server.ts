@@ -11,7 +11,10 @@ const app = createApp({ db, reportsQueue, config: {
 } });
 const server = app.listen(env.API_PORT, () => console.log(`API listening on :${env.API_PORT}`));
 
+let shuttingDown = false;
 async function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
   server.close();
   await reportsQueue.close();
   await pool.end();
