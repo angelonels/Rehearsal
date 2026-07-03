@@ -40,7 +40,8 @@ export function createInterviewGraph(model: BedrockChat) {
 Conversation:
 ${formatHistory(state.history)}
 Latest answer: ${state.latestAnswer}
-Return {score, completeness, missing, interesting, shouldFollowUp, rationale}. A follow-up is required when the answer lacks concrete evidence, contains a contradiction, or exposes an important unresolved thread.`
+Return {score, completeness, missing, interesting, shouldFollowUp, rationale}. A follow-up is required when the answer lacks concrete evidence, contains a contradiction, or exposes an important unresolved thread.`,
+        evaluationSchema
       ));
     } catch {
       evaluation = fallbackEvaluation(state.latestAnswer);
