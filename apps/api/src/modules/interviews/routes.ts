@@ -10,9 +10,15 @@ export function interviewRoutes(service: InterviewService, reportsQueue: Queue):
   router.post("/", async (req, res) => res.status(201).json({ data: await service.create(req.userId!, createSessionSchema.parse(req.body)) }));
   router.post("/:id/connect", async (req, res) => res.json({ data: await service.connect(req.userId!, req.params.id!) }));
   router.post("/:id/complete", async (req, res) => {
-    const session = await service.complete(req.userId!, req.params.id!);
-    await reportsQueue.add("generate-report", { sessionId: session.id }, { jobId: session.id, attempts: 3, backoff: { type: "exponential", delay: 2000 } });
-    res.status(202).json({ data: session });
+    const result = await service.complete(req.userId!, req.params.id!);
+    if (result.enqueueReport) {
+      await reportsQueue.add("generate-report", { sessionId: result.session.id }, {
+        jobId: result.session.id,
+        attempts: 3,
+        backoff: { type: "exponential", delay: 2000 }
+      });
+    }
+    res.status(202).json({ data: result.session });
   });
   return router;
 }

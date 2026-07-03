@@ -63,9 +63,16 @@ export class InterviewService {
   }
 
   async complete(userId: string, id: string) {
+    const existing = await this.db.query.sessions.findFirst({
+      where: and(eq(sessions.id, id), eq(sessions.userId, userId))
+    });
+    if (!existing) throw new AppError(404, "SESSION_NOT_FOUND", "Interview session not found.");
+    if (["report_pending", "report_ready", "failed"].includes(existing.status)) {
+      return { session: existing, enqueueReport: false };
+    }
     const [session] = await this.db.update(sessions).set({ status: "report_pending", endedAt: new Date() })
       .where(and(eq(sessions.id, id), eq(sessions.userId, userId))).returning();
-    if (!session) throw new AppError(404, "SESSION_NOT_FOUND", "Interview session not found.");
-    return session;
+    if (!session) throw new Error("Session update failed");
+    return { session, enqueueReport: true };
   }
 }

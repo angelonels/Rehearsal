@@ -13,7 +13,15 @@ export class AuthService {
     const existing = await this.db.query.users.findFirst({ where: eq(users.email, input.email) });
     if (existing) throw new AppError(409, "EMAIL_IN_USE", "An account already exists for this email.");
     const passwordHash = await argon2.hash(input.password, { type: argon2.argon2id });
-    const [user] = await this.db.insert(users).values({ ...input, passwordHash }).returning();
+    let user: typeof users.$inferSelect | undefined;
+    try {
+      [user] = await this.db.insert(users).values({ ...input, passwordHash }).returning();
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new AppError(409, "EMAIL_IN_USE", "An account already exists for this email.");
+      }
+      throw error;
+    }
     if (!user) throw new Error("User insert failed");
     return this.issue(user);
   }
@@ -27,14 +35,26 @@ export class AuthService {
   }
 
   private issue(user: typeof users.$inferSelect) {
-    const token = jwt.sign({ sub: user.id }, this.secret, { expiresIn: this.expiresIn as NonNullable<jwt.SignOptions["expiresIn"]> });
+    const token = jwt.sign({ sub: user.id }, this.secret, {
+      audience: "rehearsal-web",
+      expiresIn: this.expiresIn as NonNullable<jwt.SignOptions["expiresIn"]>,
+      issuer: "rehearsal-api"
+    });
     const { passwordHash: _, ...safeUser } = user;
     return { token, user: safeUser };
   }
 }
 
 export function verifyToken(token: string, secret: string) {
-  const payload = jwt.verify(token, secret);
+  const payload = jwt.verify(token, secret, {
+    algorithms: ["HS256"],
+    audience: "rehearsal-web",
+    issuer: "rehearsal-api"
+  });
   if (typeof payload === "string" || !payload.sub) throw new AppError(401, "UNAUTHORIZED", "Sign in to continue.");
   return payload.sub;
+}
+
+function isUniqueViolation(error: unknown): error is { code: string } {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
 }
