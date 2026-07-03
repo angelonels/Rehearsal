@@ -105,6 +105,9 @@ importers:
       '@livekit/agents-plugin-deepgram':
         specifier: ^1.4.9
         version: 1.4.11(@livekit/agents@1.4.11(@aws-sdk/credential-provider-node@3.972.61)(@livekit/rtc-node@0.13.30)(@smithy/signature-v4@5.6.1)(typescript@5.9.3)(zod@3.25.76))(@livekit/rtc-node@0.13.30)
+      '@livekit/rtc-node':
+        specifier: 0.13.30
+        version: 0.13.30
       '@rehearsal/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

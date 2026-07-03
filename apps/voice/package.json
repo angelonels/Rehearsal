@@ -14,6 +14,7 @@
     "@langchain/langgraph": "^0.3.6",
     "@livekit/agents": "^1.4.9",
     "@livekit/agents-plugin-deepgram": "^1.4.9",
+    "@livekit/rtc-node": "0.13.30",
     "@rehearsal/contracts": "workspace:*",
     "@rehearsal/database": "workspace:*",
     "dotenv": "^16.5.0",
