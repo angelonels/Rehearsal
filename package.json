@@ -4,17 +4,13 @@
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "build": "pnpm -r build",
-    "dev": "pnpm --parallel --filter @rehearsal/api --filter @rehearsal/voice-agent --filter @rehearsal/web dev",
-    "lint": "pnpm -r lint",
+    "dev": "pnpm --parallel --stream --filter @rehearsal/api --filter @rehearsal/voice --filter @rehearsal/web dev",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "db:generate": "pnpm --filter @rehearsal/database generate",
-    "db:migrate": "pnpm --filter @rehearsal/database migrate",
-    "infra:up": "docker compose up -d postgres redis livekit",
-    "infra:down": "docker compose down"
+    "db:generate": "pnpm --filter @rehearsal/database db:generate",
+    "db:migrate": "pnpm --filter @rehearsal/database db:migrate"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
   }
 }
-

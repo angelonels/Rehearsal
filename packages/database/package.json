@@ -1,26 +1,23 @@
 {
   "name": "@rehearsal/database",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
+  "exports": "./src/index.ts",
   "scripts": {
-    "build": "tsc --noEmit",
-    "generate": "prisma generate",
-    "migrate": "prisma migrate deploy",
-    "migrate:dev": "prisma migrate dev",
-    "lint": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6.10.1"
+    "drizzle-orm": "^0.44.2",
+    "pg": "^8.16.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.32",
-    "prisma": "^6.10.1",
+    "@types/pg": "^8.15.4",
+    "drizzle-kit": "^0.31.1",
+    "tsx": "^4.20.3",
     "vitest": "^3.2.4"
   }
 }
