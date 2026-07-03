@@ -1,4 +1,5 @@
 import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const experienceLevel = pgEnum("experience_level", ["entry", "mid", "senior", "lead"]);
 export const interviewType = pgEnum("interview_type", ["behavioral", "technical", "system_design", "culture_fit"]);
@@ -48,3 +49,21 @@ export const reports = pgTable("reports", {
   detailedFeedback: jsonb("detailed_feedback").$type<Array<{ topic: string; feedback: string }>>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
+
+export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions)
+}));
+
+export const sessionsRelations = relations(sessions, ({ one, many }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
+  transcriptTurns: many(transcriptTurns),
+  report: one(reports)
+}));
+
+export const transcriptTurnsRelations = relations(transcriptTurns, ({ one }) => ({
+  session: one(sessions, { fields: [transcriptTurns.sessionId], references: [sessions.id] })
+}));
+
+export const reportsRelations = relations(reports, ({ one }) => ({
+  session: one(sessions, { fields: [reports.sessionId], references: [sessions.id] })
+}));
