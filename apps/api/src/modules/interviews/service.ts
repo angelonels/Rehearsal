@@ -34,13 +34,32 @@ export class InterviewService {
       id, userId, roomName, type: input.type, targetRole: input.targetRole ?? user.jobRole, durationMinutes: input.durationMinutes
     }).returning();
     if (!session) throw new Error("Session insert failed");
-    const token = new AccessToken(this.livekit.apiKey, this.livekit.apiSecret, {
-      identity: userId,
-      name: user.name,
-      metadata: JSON.stringify({ sessionId: id, role: user.jobRole, experienceLevel: user.experienceLevel })
+    return { session, connection: await this.issueConnection(user, session) };
+  }
+
+  async connect(userId: string, id: string) {
+    const session = await this.db.query.sessions.findFirst({
+      where: and(eq(sessions.id, id), eq(sessions.userId, userId)),
+      with: { user: true }
     });
-    token.addGrant({ room: roomName, roomJoin: true, canPublish: true, canSubscribe: true });
-    return { session, connection: { url: this.livekit.url, token: await token.toJwt() } };
+    if (!session?.user) throw new AppError(404, "SESSION_NOT_FOUND", "Interview session not found.");
+    if (!["created", "active"].includes(session.status)) {
+      throw new AppError(409, "SESSION_ENDED", "This interview has ended. Start a new interview to continue practicing.");
+    }
+    return this.issueConnection(session.user, session);
+  }
+
+  private async issueConnection(
+    user: typeof users.$inferSelect,
+    session: typeof sessions.$inferSelect
+  ) {
+    const token = new AccessToken(this.livekit.apiKey, this.livekit.apiSecret, {
+      identity: user.id,
+      name: user.name,
+      metadata: JSON.stringify({ sessionId: session.id, role: user.jobRole, experienceLevel: user.experienceLevel })
+    });
+    token.addGrant({ room: session.roomName, roomJoin: true, canPublish: true, canSubscribe: true });
+    return { url: this.livekit.url, token: await token.toJwt() };
   }
 
   async complete(userId: string, id: string) {
